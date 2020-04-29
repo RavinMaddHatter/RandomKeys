@@ -8,21 +8,25 @@ from pynput import keyboard as kbi
 
 from pynput.mouse import Listener
 
-#gui Root
 root = Tk()
 FileGUI=StringVar()
 timeBetweenPresses=DoubleVar()
 timeBetweenPresses.set(.1)
 keys=StringVar()
+masher=StringVar()
+masher.set("Off")
 keys.set("444444555566789")
 row=0
 keysLB=Label(root, text="Key Weights")
-timeLB=Label(root, text="delay")
+timeLB=Label(root, text="Delay After Click")
+ButtonMasherLB=Label(root, text="Delay After Click")
+root.title("Madhatter's Button Masher")
 
 keyControlq=Queue()
 current = set()
 pressKey=False
-# The key combination to check
+
+
 COMBINATIONS = [
     {kbi.Key.shift, kbi.KeyCode(char='r')},
     {kbi.Key.shift, kbi.KeyCode(char='R')}]
@@ -34,17 +38,16 @@ def selectRandomKey():
 def on_click(x, y, button, pressed):
     if not pressed:
         print("click")
-        #time.sleep(timeBetweenPresses.get())
         print(not keyControlq.empty())
         if not keyControlq.empty():
             selectRandomKey()
 
 def toggle():
-    print("toggling")
     if keyControlq.empty():
+        masher.set("On")
         keyControlq.put("toggleKeyPressing")
     else:
-        print("Toggling Key Randomizer")
+        masher.set("Off")
         with keyControlq.mutex:
             keyControlq.queue.clear()
 def on_press(key):
@@ -78,7 +81,7 @@ row+=1
 timeLB.grid(row=row,column=0)
 timeEntry.grid(row=row,column=1)
 row+=1
-startStop=Button(root,text="Start/Stop (65shift+r)",command=toggle)
+startStop=Button(root,text="Start/Stop (shift+r)",command=toggle)
 startStop.grid(row=row,column=1)
 
 root.mainloop()
