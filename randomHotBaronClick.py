@@ -15,7 +15,7 @@ timeBetweenPresses.set(.1)
 keys=StringVar()
 masher=StringVar()
 masher.set("Off")
-keys.set("444444555566789")
+keys.set("55555566667789")
 row=0
 keysLB=Label(root, text="Key Weights")
 timeLB=Label(root, text="Delay After Click")
@@ -46,8 +46,10 @@ def toggle():
     if keyControlq.empty():
         masher.set("On")
         keyControlq.put("toggleKeyPressing")
+        timeEntry.config({"background": "Green"})
     else:
         masher.set("Off")
+        timeEntry.config({"background": "White"})
         with keyControlq.mutex:
             keyControlq.queue.clear()
 def on_press(key):
