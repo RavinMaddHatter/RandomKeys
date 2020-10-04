@@ -5,7 +5,7 @@ from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar
 from queue import Queue
 import threading
 from pynput import keyboard as kbi
-
+print("test")
 from pynput.mouse import Listener
 
 root = Tk()
