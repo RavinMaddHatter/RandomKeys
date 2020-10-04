@@ -32,7 +32,9 @@ COMBINATIONS = [
     {kbi.Key.shift, kbi.KeyCode(char='R')}]
 
 def selectRandomKey():
+    print(keys.get())
     key=random.choice(keys.get())
+    print(key)
     kbo.press_and_release(key)
 
 def on_click(x, y, button, pressed):
