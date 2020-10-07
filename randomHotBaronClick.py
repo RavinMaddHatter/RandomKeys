@@ -60,16 +60,15 @@ class controller:
         depressed=False
         while True:
             sleep(0.01)
-            if  GetAsyncKeyState(VK_CODE['shift']):
-                pass
-            elif  GetAsyncKeyState(VK_CODE['r']):
-                pass
-            keyCombo=GetAsyncKeyState(VK_CODE['shift']) and GetAsyncKeyState(VK_CODE['r'])
+            shift=GetAsyncKeyState(VK_CODE['shift'])
+            r=GetAsyncKeyState(VK_CODE['r'])
+            keyCombo=shift and r
             if  keyCombo:
                 if not depressed:
                     print("hotkey Toggle")
                     self.toggle()
                     depressed=True
+                    shift=GetAsyncKeyState(VK_CODE['shift'])
             elif depressed:
                 depressed=False
                 
@@ -81,6 +80,9 @@ class controller:
             timeEntry.config({"background": "White"})
             with self.keyControlq.mutex:
                 self.keyControlq.queue.clear()
+    def close():
+        self.hotkeys.stop()
+        self.click.stop()
 
 ctr=controller()
 VK_CODE = {'leftClick':0x01,
@@ -152,7 +154,7 @@ startStop.grid(row=row,column=1)
 root.mainloop()
 
 
-
+ctr.stop()
 
 
 
