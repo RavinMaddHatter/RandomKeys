@@ -24,9 +24,11 @@ pressKey=False
 class controller:
     def __init__(self):
         self.keyControlq=Queue()
+        self.stopQueue=Queue()
         self.prevLeftClick=False
         self.prevRightClick=False
         self.startLiseners()
+        
         
     def selectRandomKey(self):
         key=choice(keys.get())
@@ -43,7 +45,7 @@ class controller:
         self.click.start()
         
     def clickListener(self):
-        while True:
+        while self.stopQueue.empty():
             sleep(0.01)
             if not self.keyControlq.empty():
                 leftClickState=GetAsyncKeyState(VK_CODE["leftClick"])
@@ -56,9 +58,11 @@ class controller:
                     self.selectRandomKey()
                 self.prevLeftClick=leftClickState
                 self.prevRightClick = rightClickState
+
+        print("click listener stopped")
     def hotkeyListener(self):
         depressed=False
-        while True:
+        while self.stopQueue.empty():
             sleep(0.01)
             shift=GetAsyncKeyState(VK_CODE['shift'])
             r=GetAsyncKeyState(VK_CODE['r'])
@@ -71,6 +75,8 @@ class controller:
                     shift=GetAsyncKeyState(VK_CODE['shift'])
             elif depressed:
                 depressed=False
+
+        print("key listener stopped")
                 
     def toggle(self):
         if self.keyControlq.empty():
@@ -80,9 +86,8 @@ class controller:
             timeEntry.config({"background": "White"})
             with self.keyControlq.mutex:
                 self.keyControlq.queue.clear()
-    def close():
-        self.hotkeys.stop()
-        self.click.stop()
+    def close(self):
+        self.stopQueue.put("stop")
 
 ctr=controller()
 VK_CODE = {'leftClick':0x01,
@@ -154,7 +159,7 @@ startStop.grid(row=row,column=1)
 root.mainloop()
 
 
-ctr.stop()
+ctr.close()
 
 
 
