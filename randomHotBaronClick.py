@@ -5,6 +5,8 @@ from win32con import KEYEVENTF_KEYUP
 from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar
 from queue import Queue
 from threading import Thread
+from os import path
+import json
 
 
 root = Tk()
@@ -12,7 +14,15 @@ FileGUI=StringVar()
 timeBetweenPresses=DoubleVar()
 timeBetweenPresses.set(.01)
 keys=StringVar()
-keys.set("55555566667789")
+print(path.exists("config.json"))
+if path.exists("config.json"):
+    with open("config.json") as f:
+        data = json.load(f)
+        print(data)
+        print(data["default"])
+    keys.set(data["default"])
+else:
+    keys.set("55555566667789")
 row=0
 keysLB=Label(root, text="Key Weights")
 timeLB=Label(root, text="Delay After Click")
@@ -20,7 +30,7 @@ ButtonMasherLB=Label(root, text="Delay After Click")
 root.title("Madhatter's Button Masher")
 current = set()
 pressKey=False
-
+lastUsed=keys.get()
 class controller:
     def __init__(self):
         self.keyControlq=Queue()
@@ -31,8 +41,9 @@ class controller:
         
         
     def selectRandomKey(self):
+        global lastUsed
         key=choice(keys.get())
-        print(key)
+        lastUsed=keys.get()
         sleep(timeBetweenPresses.get())
         keybd_event(VK_CODE[key],0,0,0)
         sleep(0.01)
@@ -48,6 +59,7 @@ class controller:
         while self.stopQueue.empty():
             sleep(0.01)
             if not self.keyControlq.empty():
+                
                 leftClickState=GetAsyncKeyState(VK_CODE["leftClick"])
                 rightClickState=GetAsyncKeyState(VK_CODE["rightClick"])
                 if self.prevRightClick and not rightClickState:
@@ -73,6 +85,7 @@ class controller:
                     self.toggle()
                     depressed=True
                     shift=GetAsyncKeyState(VK_CODE['shift'])
+                    lastUsed=keys.get()
             elif depressed:
                 depressed=False
 
@@ -161,6 +174,7 @@ root.mainloop()
 
 ctr.close()
 
-
-
-
+save_dict={"default":lastUsed}
+print(save_dict)
+with open("config.json", 'w') as json_file:
+  json.dump(save_dict, json_file)
