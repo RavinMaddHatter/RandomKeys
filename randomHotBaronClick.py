@@ -2,7 +2,7 @@ from random import choice
 from time import sleep
 from win32api import keybd_event, GetAsyncKeyState
 from win32con import KEYEVENTF_KEYUP
-from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar
+from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar, OptionMenu
 from queue import Queue
 from threading import Thread
 from os import path
@@ -14,36 +14,46 @@ FileGUI=StringVar()
 timeBetweenPresses=DoubleVar()
 timeBetweenPresses.set(.01)
 keys=StringVar()
+name=StringVar()
+selection=StringVar()
+
 print(path.exists("config.json"))
+data={}
 if path.exists("config.json"):
     with open("config.json") as f:
         data = json.load(f)
-        print(data)
         print(data["default"])
-    keys.set(data["default"])
+    
+    
 else:
+    data={"default":"55555566667789"}
+    name.set("default")
     keys.set("55555566667789")
 row=0
 keysLB=Label(root, text="Key Weights")
 timeLB=Label(root, text="Delay After Click")
+nameLB=Label(root, text="Save Name")
+selectLB=Label(root, text="Save Select")
+
 ButtonMasherLB=Label(root, text="Delay After Click")
 root.title("Madhatter's Button Masher")
 current = set()
 pressKey=False
-lastUsed=keys.get()
 class controller:
-    def __init__(self):
+    def __init__(self,saveData):
         self.keyControlq=Queue()
         self.stopQueue=Queue()
         self.prevLeftClick=False
         self.prevRightClick=False
         self.startLiseners()
-        
+        self.options=list(saveData.keys())
+        self.save_dict=saveData
+        keys.set(data["default"])
+        name.set("default")
+        selection.set("default")
         
     def selectRandomKey(self):
-        global lastUsed
         key=choice(keys.get())
-        lastUsed=keys.get()
         sleep(timeBetweenPresses.get())
         keybd_event(VK_CODE[key],0,0,0)
         sleep(0.01)
@@ -90,7 +100,19 @@ class controller:
                 depressed=False
 
         print("key listener stopped")
-                
+    def save(self):
+        self.save_dict[name.get()]=keys.get()
+        with open("config.json", 'w') as json_file:
+            json.dump(self.save_dict, json_file)
+        
+        saveMenu.delete(0, "end")
+        for string in list(self.save_dict.keys()):
+            menu.add_command(label=string, 
+                             command=lambda value=string: selection.set(value))
+        selection.set(name.get())
+    def changeSave(self, value):
+        name.set(value)
+        keys.set(self.save_dict[value])
     def toggle(self):
         if self.keyControlq.empty():
             self.keyControlq.put("toggleKeyPressing")
@@ -102,7 +124,7 @@ class controller:
     def close(self):
         self.stopQueue.put("stop")
 
-ctr=controller()
+ctr=controller(data)
 VK_CODE = {'leftClick':0x01,
            'rightClick':0x02,
             'backspace':0x08,
@@ -159,22 +181,31 @@ VK_CODE = {'leftClick':0x01,
 
 keysEntry = Entry(root,textvariable=keys)
 timeEntry = Entry(root,textvariable=timeBetweenPresses)
+nameEntry = Entry(root,textvariable=name)
+startStop=Button(root,text="Start/Stop (shift+r)",command=ctr.toggle)
+saveButton=Button(root,text="Save Settings",command=ctr.save)
+saveMenu  = OptionMenu(root, selection, *list(ctr.save_dict.keys()),command=ctr.changeSave)
 
+selectLB.grid(row=row,column=0)
+saveMenu.grid(row=row,column=1)
+row+=1
+nameLB.grid(row=row,column=0)
+nameEntry.grid(row=row,column=1)
+
+row+=1
 keysLB.grid(row=row,column=0)
 keysEntry.grid(row=row,column=1)
 row+=1
 timeLB.grid(row=row,column=0)
 timeEntry.grid(row=row,column=1)
 row+=1
-startStop=Button(root,text="Start/Stop (shift+r)",command=ctr.toggle)
 startStop.grid(row=row,column=1)
+row+=1
+saveButton.grid(row=row,column=1)
 
 root.mainloop()
 
 
 ctr.close()
 
-save_dict={"default":lastUsed}
-print(save_dict)
-with open("config.json", 'w') as json_file:
-  json.dump(save_dict, json_file)
+
