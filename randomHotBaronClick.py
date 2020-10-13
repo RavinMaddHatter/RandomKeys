@@ -2,7 +2,7 @@ from random import choice
 from time import sleep
 from win32api import keybd_event, GetAsyncKeyState
 from win32con import KEYEVENTF_KEYUP
-from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar, OptionMenu,_setit
+from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar,_setit, ttk
 from queue import Queue
 from threading import Thread
 from os import path
@@ -14,7 +14,6 @@ FileGUI=StringVar()
 timeBetweenPresses=DoubleVar()
 timeBetweenPresses.set(.01)
 keys=StringVar()
-name=StringVar()
 selection=StringVar()
 
 print(path.exists("config.json"))
@@ -50,7 +49,6 @@ class controller:
         self.options=list(saveData.keys())
         self.save_dict=saveData
         keys.set(data["default"])
-        name.set("default")
         selection.set("default")
         
     def selectRandomKey(self):
@@ -102,37 +100,27 @@ class controller:
 
         print("key listener stopped")
     def save(self):
-        self.save_dict[name.get()]=keys.get()
+        self.save_dict[selection.get()]=keys.get()
         with open("config.json", 'w') as json_file:
             json.dump(self.save_dict, json_file)
-        self.options.append(name.get())
-        selection.set(name.get())
-        self.removeAll()
-        for opt in list(self.save_dict.keys()):
-            saveMenu['menu'].add_command(label=opt, command=_setit(selection, opt))
+        saveMenu['values'] = tuple(self.save_dict.keys())
     def removeAll(self):
         saveMenu['menu'].delete(0,'end')
-    def changeSave(self):
+    def changeSave(self, value):
         value=selection.get()
-        name.set(value)
-        print(self.save_dict)
-        print(self.save_dict[value])
         keys.set(self.save_dict[value])
 
     def delete(self):
-        
-        if name.get() in self.options and name.get()!="default":
-            self.save_dict.pop(name.get())
-            self.options.remove(name.get())
-            r_index=saveMenu['menu'].index(selection.get())
-            saveMenu['menu'].delete(r_index)
-            name.set("default")
+        if selection.get()!="default":
+            self.save_dict.pop(selection.get())
+            self.options.remove(selection.get())
+            selection.set("default")
             keys.set(self.save_dict["default"])
             selection.set("default")
+            saveMenu['values'] = tuple(self.save_dict.keys())
+
             with open("config.json", 'w') as json_file:
-                json.dump(self.save_dict, json_file)
-        self.changeSave()
-            
+                json.dump(self.save_dict, json_file)            
     def toggle(self):
         if self.keyControlq.empty():
             self.keyControlq.put("toggleKeyPressing")
@@ -202,18 +190,15 @@ VK_CODE = {'leftClick':0x01,
 
 keysEntry = Entry(root,textvariable=keys)
 timeEntry = Entry(root,textvariable=timeBetweenPresses)
-nameEntry = Entry(root,textvariable=name)
 startStop=Button(root,text="Start/Stop (shift+r)",command=ctr.toggle)
 saveButton=Button(root,text="Save Settings",command=ctr.save)
-loadButton=Button(root,text="load Save",command=ctr.changeSave)
 
 deleteButton=Button(root,text="delete Settings",command=ctr.delete)
-saveMenu  = OptionMenu(root, selection, *list(ctr.options))
+saveMenu  = ttk.Combobox(root, width=27, textvariable = selection)
+saveMenu.bind("<<ComboboxSelected>>",ctr.changeSave)
+saveMenu['values'] = tuple(ctr.save_dict.keys())
 selectLB.grid(row=row,column=0)
 saveMenu.grid(row=row,column=1)
-row+=1
-nameLB.grid(row=row,column=0)
-nameEntry.grid(row=row,column=1)
 
 row+=1
 keysLB.grid(row=row,column=0)
@@ -222,12 +207,10 @@ row+=1
 timeLB.grid(row=row,column=0)
 timeEntry.grid(row=row,column=1)
 row+=1
-loadButton.grid(row=row,column=0)
-startStop.grid(row=row,column=1)
-
-row+=1
 deleteButton.grid(row=row,column=0)
 saveButton.grid(row=row,column=1)
+row+=1
+startStop.grid(row=row,column=1)
 
 root.mainloop()
 
