@@ -2,7 +2,7 @@ from random import choice
 from time import sleep
 from win32api import keybd_event, GetAsyncKeyState
 from win32con import KEYEVENTF_KEYUP
-from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar,_setit, ttk,messagebox, Toplevel
+from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar
 from queue import Queue
 from threading import Thread
 from os import path
@@ -14,101 +14,36 @@ FileGUI=StringVar()
 timeBetweenPresses=DoubleVar()
 timeBetweenPresses.set(.01)
 keys=StringVar()
-selection=StringVar()
-toggleHotKey=StringVar()
-stopHotkey=StringVar()
 print(path.exists("config.json"))
-data={}
 if path.exists("config.json"):
     with open("config.json") as f:
         data = json.load(f)
-    
-    
+        print(data)
+        print(data["default"])
+    keys.set(data["default"])
 else:
-    data={"default":"55555566667789"}
-    name.set("default")
     keys.set("55555566667789")
-settings={}
-if path.exists("settings.json"):
-    with open("settings.json") as f:
-        settings = json.load(f)
-    print(settings.keys())
-else:
-    settings={"toggleKey":'r',"stopKey":"="}
-
-
-
-
-toggleHotKey.set(settings["toggleKey"])
-toggleHotKey.trace("w", lambda *args: character_limit(toggleHotKey))
-
-stopHotkey.set(settings["stopKey"])
-stopHotkey.trace("w", lambda *args: character_limit(stopHotkey))
 row=0
 keysLB=Label(root, text="Key Weights")
 timeLB=Label(root, text="Delay After Click")
-nameLB=Label(root, text="Save Name")
-selectLB=Label(root, text="Save Select")
-
-
 ButtonMasherLB=Label(root, text="Delay After Click")
 root.title("Madhatter's Button Masher")
 current = set()
 pressKey=False
-def character_limit(entry_text):
-    if len(entry_text.get()) > 0:
-        entry_text.set(entry_text.get()[-1])
-
-class settingsMenu:
-    def __init__(self,master,toggleStrVar,stopStrVar):
-        self.top=Toplevel(master)
-        self.top.protocol("WM_DELETE_WINDOW", self.cleanup)
-        self.startingToggleKey=toggleStrVar.get()
-        self.toggleHotKey=toggleStrVar
-        self.startingEndKey=stopStrVar.get()
-        self.stopHotkey=stopStrVar
-        rt=0
-        self.l=Label(self.top,text="stop Randomizer:").grid(row=rt,column=1)
-        Entry(self.top,textvariable=self.stopHotkey,width=2,borderwidth=1).grid(row=rt,column=2)
-        rt+=1
-        Label(self.top,text="Toggle Randomizer (shift+):").grid(row=rt,column=1)
-        Entry(self.top,textvariable=self.toggleHotKey,width=2,borderwidth=1).grid(row=rt,column=2)
-    def sanitizeDataThenExit(self):
-        keysValid=True
-        toggleKeySetting=self.toggleHotKey.get().lower()
-        if toggleKeySetting in list(VK_CODE.keys()):
-            self.toggleHotKey.set(toggleKeySetting)
-        else:
-            keysValid=False
-            self.toggleHotKey.set(self.startingToggleKey )
-        stopKeySetting=self.stopHotkey.get().lower()
-        if stopKeySetting in list(VK_CODE.keys()):
-            self.stopHotkey.set(stopKeySetting)
-        else:
-            keysValid=False
-            self.stopHotkey.set(self.startingEndKey)
-        
-        if not keysValid:
-            messagebox.showerror("Key Selection Error", "The selected keys could not be used as hot keys. Not all settings were saved.")
-        pass
-    def cleanup(self):
-        self.sanitizeDataThenExit()
-        self.top.destroy()
+lastUsed=keys.get()
 class controller:
-    def __init__(self,saveData):
+    def __init__(self):
         self.keyControlq=Queue()
         self.stopQueue=Queue()
         self.prevLeftClick=False
         self.prevRightClick=False
         self.startLiseners()
-
-        self.options=list(saveData.keys())
-        self.save_dict=saveData
-        keys.set(data["default"])
-        selection.set("default")
+        
         
     def selectRandomKey(self):
+        global lastUsed
         key=choice(keys.get())
+        lastUsed=keys.get()
         sleep(timeBetweenPresses.get())
         keybd_event(VK_CODE[key],0,0,0)
         sleep(0.01)
@@ -137,25 +72,13 @@ class controller:
                 self.prevRightClick = rightClickState
 
         print("click listener stopped")
-    def changeHotkeys(self):
-        window=settingsMenu
-        w=settingsMenu(root,toggleHotKey,stopHotkey)
-        settingsButton["state"]="disabled"
-        root.wait_window(w.top)
-        settingsButton["state"]="normal"
     def hotkeyListener(self):
         depressed=False
         while self.stopQueue.empty():
             sleep(0.01)
             shift=GetAsyncKeyState(VK_CODE['shift'])
-            ##toggleHotKey
-            toogleKeyState=GetAsyncKeyState(VK_CODE[toggleHotKey.get()])
-            keyCombo=shift and toogleKeyState
-            stopKeyState=GetAsyncKeyState(VK_CODE[stopHotkey.get()])
-            if stopKeyState:
-                with self.keyControlq.mutex:
-                    self.keyControlq.queue.clear()
-                    timeEntry.config({"background": "White"})
+            r=GetAsyncKeyState(VK_CODE['r'])
+            keyCombo=shift and r
             if  keyCombo:
                 if not depressed:
                     print("hotkey Toggle")
@@ -163,37 +86,11 @@ class controller:
                     depressed=True
                     shift=GetAsyncKeyState(VK_CODE['shift'])
                     lastUsed=keys.get()
-            
             elif depressed:
                 depressed=False
 
         print("key listener stopped")
-    def save(self):
-        self.save_dict[selection.get()]=keys.get()
-        with open("config.json", 'w') as json_file:
-            json.dump(self.save_dict, json_file)
-        settings={"toggleKey":toggleHotKey.get(),"stopKey":stopHotkey.get()}
-        
-        with open("settings.json", 'w') as json_file:
-            json.dump(settings, json_file)
-        saveMenu['values'] = tuple(self.save_dict.keys())
-    def removeAll(self):
-        saveMenu['menu'].delete(0,'end')
-    def changeSave(self, value):
-        value=selection.get()
-        keys.set(self.save_dict[value])
-
-    def delete(self):
-        if selection.get()!="default":
-            self.save_dict.pop(selection.get())
-            self.options.remove(selection.get())
-            selection.set("default")
-            keys.set(self.save_dict["default"])
-            selection.set("default")
-            saveMenu['values'] = tuple(self.save_dict.keys())
-
-            with open("config.json", 'w') as json_file:
-                json.dump(self.save_dict, json_file)            
+                
     def toggle(self):
         if self.keyControlq.empty():
             self.keyControlq.put("toggleKeyPressing")
@@ -205,7 +102,7 @@ class controller:
     def close(self):
         self.stopQueue.put("stop")
 
-ctr=controller(data)
+ctr=controller()
 VK_CODE = {'leftClick':0x01,
            'rightClick':0x02,
             'backspace':0x08,
@@ -251,7 +148,6 @@ VK_CODE = {'leftClick':0x01,
            '-':0xBD,
            '.':0xBE,
            '/':0xBF,
-           '=':0xBB,
            '`':0xC0,
            ';':0xBA,
            '[':0xDB,
@@ -263,32 +159,22 @@ VK_CODE = {'leftClick':0x01,
 
 keysEntry = Entry(root,textvariable=keys)
 timeEntry = Entry(root,textvariable=timeBetweenPresses)
-startStop=Button(root,text="Start/Stop",command=ctr.toggle)
-saveButton=Button(root,text="Save Settings",command=ctr.save)
-settingsButton=Button(root,text="Change Hotkeys",command=ctr.changeHotkeys)
 
-deleteButton=Button(root,text="delete Settings",command=ctr.delete)
-saveMenu  = ttk.Combobox(root, width=27, textvariable = selection)
-saveMenu.bind("<<ComboboxSelected>>",ctr.changeSave)
-saveMenu['values'] = tuple(ctr.save_dict.keys())
-selectLB.grid(row=row,column=0)
-saveMenu.grid(row=row,column=1)
-
-row+=1
 keysLB.grid(row=row,column=0)
 keysEntry.grid(row=row,column=1)
 row+=1
 timeLB.grid(row=row,column=0)
 timeEntry.grid(row=row,column=1)
 row+=1
-deleteButton.grid(row=row,column=0)
-saveButton.grid(row=row,column=1)
-row+=1
+startStop=Button(root,text="Start/Stop (shift+r)",command=ctr.toggle)
 startStop.grid(row=row,column=1)
-settingsButton.grid(row=row,column=0)
+
 root.mainloop()
 
 
 ctr.close()
 
-
+save_dict={"default":lastUsed}
+print(save_dict)
+with open("config.json", 'w') as json_file:
+  json.dump(save_dict, json_file)
