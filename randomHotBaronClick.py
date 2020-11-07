@@ -40,8 +40,10 @@ else:
 
 
 toggleHotKey.set(settings["toggleKey"])
+toggleHotKey.trace("w", lambda *args: character_limit(toggleHotKey))
 
 stopHotkey.set(settings["stopKey"])
+stopHotkey.trace("w", lambda *args: character_limit(stopHotkey))
 row=0
 keysLB=Label(root, text="Key Weights")
 timeLB=Label(root, text="Delay After Click")
@@ -53,53 +55,39 @@ ButtonMasherLB=Label(root, text="Delay After Click")
 root.title("Madhatter's Button Masher")
 current = set()
 pressKey=False
-KeepThread=True
+
 def character_limit(entry_text):
     if len(entry_text.get()) > 0:
         entry_text.set(entry_text.get()[-1])
 
 class settingsMenu:
     def __init__(self,master,toggleStrVar,stopStrVar):
-        global KeepThread
-        KeepThread=True
-        self.top=Toplevel(master,borderwidth=10)
+        self.top=Toplevel(master)
         self.top.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.startingToggleKey=toggleStrVar.get()
         self.toggleHotKey=toggleStrVar
         self.startingEndKey=stopStrVar.get()
         self.stopHotkey=stopStrVar
-        
-        self.stopEntry=StringVar()
-        self.stopEntry.set(self.startingEndKey)
-        self.stopEntry.trace("w", lambda *args: character_limit(self.stopEntry))
-        self.toggleEntry=StringVar()
-        self.toggleEntry.set(self.startingToggleKey)
-        self.toggleEntry.trace("w", lambda *args: character_limit(self.toggleEntry))
         rt=0
         self.l=Label(self.top,text="stop Randomizer:").grid(row=rt,column=1)
-        Entry(self.top,textvariable=self.stopEntry,width=2,borderwidth=1).grid(row=rt,column=2)
+        Entry(self.top,textvariable=self.stopHotkey,width=2,borderwidth=1).grid(row=rt,column=2)
         rt+=1
         Label(self.top,text="Toggle Randomizer (shift+):").grid(row=rt,column=1)
-        Entry(self.top,textvariable=self.toggleEntry,width=2,borderwidth=1).grid(row=rt,column=2)
+        Entry(self.top,textvariable=self.toggleHotKey,width=2,borderwidth=1).grid(row=rt,column=2)
     def sanitizeDataThenExit(self):
         keysValid=True
-        toggleKeySetting=self.toggleEntry.get().lower()
-        stopKeySetting=self.stopEntry.get().lower()
+        toggleKeySetting=self.toggleHotKey.get().lower()
         if toggleKeySetting in list(VK_CODE.keys()):
             self.toggleHotKey.set(toggleKeySetting)
         else:
             keysValid=False
             self.toggleHotKey.set(self.startingToggleKey )
-        
+        stopKeySetting=self.stopHotkey.get().lower()
         if stopKeySetting in list(VK_CODE.keys()):
             self.stopHotkey.set(stopKeySetting)
         else:
             keysValid=False
             self.stopHotkey.set(self.startingEndKey)
-        if toggleKeySetting==stopKeySetting:
-            keysValid=False
-            self.stopHotkey.set(self.startingEndKey)
-            self.toggleHotKey.set(self.startingToggleKey )
         
         if not keysValid:
             messagebox.showerror("Key Selection Error", "The selected keys could not be used as hot keys. Not all settings were saved.")
@@ -136,10 +124,8 @@ class controller:
         self.click.start()
         
     def clickListener(self):
-        global KeepThread
-        while KeepThread:
+        while self.stopQueue.empty():
             sleep(0.01)
-            toggleHotKey.get()
             if not self.keyControlq.empty():
                 
                 leftClickState=GetAsyncKeyState(VK_CODE["leftClick"])
@@ -161,21 +147,14 @@ class controller:
         root.wait_window(w.top)
         settingsButton["state"]="normal"
     def hotkeyListener(self):
-        global KeepThread
         depressed=False
-        while KeepThread:
+        while self.stopQueue.empty():
             sleep(0.01)
             shift=GetAsyncKeyState(VK_CODE['shift'])
             ##toggleHotKey
-            if len(toggleHotKey.get())>0:
-                toogleKeyState=GetAsyncKeyState(VK_CODE[toggleHotKey.get()])
-            else:
-                toogleKeyState=False
+            toogleKeyState=GetAsyncKeyState(VK_CODE[toggleHotKey.get()])
             keyCombo=shift and toogleKeyState
-            if len(stopHotkey.get())>0:
-                stopKeyState=GetAsyncKeyState(VK_CODE[stopHotkey.get()])
-            else:
-                stopKeyState=False
+            stopKeyState=GetAsyncKeyState(VK_CODE[stopHotkey.get()])
             if stopKeyState:
                 with self.keyControlq.mutex:
                     self.keyControlq.queue.clear()
@@ -226,10 +205,7 @@ class controller:
             with self.keyControlq.mutex:
                 self.keyControlq.queue.clear()
     def close(self):
-        global KeepThread
-        KeepThread=False
-        root.destroy()
-        
+        self.stopQueue.put("stop")
 
 ctr=controller(data)
 VK_CODE = {'leftClick':0x01,
@@ -286,7 +262,7 @@ VK_CODE = {'leftClick':0x01,
            "'":0xDE,
            '`':0xC0}
 
-root.protocol("WM_DELETE_WINDOW", ctr.close)
+
 keysEntry = Entry(root,textvariable=keys)
 timeEntry = Entry(root,textvariable=timeBetweenPresses)
 startStop=Button(root,text="Start/Stop",command=ctr.toggle)
