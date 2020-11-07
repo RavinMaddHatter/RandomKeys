@@ -5,7 +5,7 @@ from win32con import KEYEVENTF_KEYUP
 from tkinter import StringVar, Button,Label,Entry,Tk,DoubleVar, Toplevel,messagebox, ttk
 
 from queue import Queue
-from threading import Thread,enumerate
+from threading import Thread
 from os import path
 import json
 
