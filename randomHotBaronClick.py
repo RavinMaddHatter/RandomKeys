@@ -26,6 +26,7 @@ if path.exists("config.json"):
     
 else:
     data={"default":"55555566667789"}
+    name.set("default")
     keys.set("55555566667789")
 settings={}
 if path.exists("settings.json"):
@@ -185,6 +186,7 @@ class controller:
     def delete(self):
         if selection.get()!="default":
             self.save_dict.pop(selection.get())
+            self.options.remove(selection.get())
             selection.set("default")
             keys.set(self.save_dict["default"])
             selection.set("default")
