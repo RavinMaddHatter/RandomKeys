@@ -7,8 +7,7 @@ from queue import Queue
 from threading import Thread
 from os import path
 import json
-
-
+ 
 root = Tk()
 FileGUI=StringVar()
 timeBetweenPresses=DoubleVar()
