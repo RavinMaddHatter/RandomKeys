@@ -125,3 +125,4 @@ dmypy.json
 .pyre/
 AutoClicker.py
 AutoLogin.py
+config.json
