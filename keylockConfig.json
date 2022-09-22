@@ -1,0 +1,7 @@
+{
+	"keyboard":["a","s","w","d","j","y","k","l",";","i","o","p","shift"],
+	"lockKey":"alt",
+	"unlockKey":"esc",
+	"leftMouseProxy":"y",
+	"rightMoseProxy":"u"
+}
