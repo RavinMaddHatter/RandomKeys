@@ -51,7 +51,7 @@ def keyboardRepress(keyEvent):
     keyboard.unhook_all()
 
     time.sleep(0.1)
-    
+    keyboard.press(keyEvent.name)
     keyboard.on_release_key(lockKey, unlock)
     keyboard.on_press_key(unlockKey, unlock)
 def keyboardMouseReleaseRight(keyEvent):
