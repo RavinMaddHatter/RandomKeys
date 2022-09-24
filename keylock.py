@@ -4,22 +4,46 @@ from win32api import keybd_event, GetAsyncKeyState
 import time
 import json
 import mouse
-trackedKeys=["a","s","w","d","j","y","k","l",";","i","o","p","shift",0x01,0x02]
-#trackedMouse=["left","right","middle"]
-lockKey="alt"
-unlockKey="esc"
+from os.path import exists
+
 import win32api
 import threading
 import queue
-
-with open("keylockConfig.json") as file:
-    data=json.load(file)
-    trackedKeys=data["keyboard"]
-    lockKey=data["lockKey"]
-    unlockKey=data["unlockKey"]
-    leftMouseProxy=data["leftMouseProxy"]
-    rightMoseProxy=data["rightMoseProxy"]
-    print(trackedKeys)
+confFile="keylockConfig.json"
+if exists(confFile):
+    with open(confFile) as file:
+        data=json.load(file)
+        trackedKeys=data["keyboard"]
+        lockKey=data["lockKey"]
+        unlockKey=data["unlockKey"]
+        leftMouseProxy=data["leftMouseProxy"]
+        rightMoseProxy=data["rightMoseProxy"]
+else:
+    print("no config file found setting defaults")
+    trackedKeys=["a","s","w","d","j","y","k","l",";","i","o","p","shift"]
+    lockKey="alt"
+    unlockKey="esc"
+    leftMouseProxy="y"
+    rightMoseProxy="u"
+    data={}
+    data["keyboard"]=trackedKeys
+    data["lockKey"]=lockKey
+    data["unlockKey"]=unlockKey
+    data["leftMouseProxy"]=leftMouseProxy
+    data["rightMoseProxy"]=rightMoseProxy
+    with open(confFile,"w+") as file:
+        json.dump(data,file, indent=2)
+print("Tracking:")
+print(trackedKeys)
+print("left mouse proxy tracker:")
+print(leftMouseProxy)
+print("right mouse proxy tracker:")
+print(rightMoseProxy)
+print("cancel hold:")
+print(unlockKey)
+print("start hold:")
+print(lockKey)
+    
 def keyboardRepress(keyEvent):
     
     print("keyup")
@@ -27,7 +51,7 @@ def keyboardRepress(keyEvent):
     keyboard.unhook_all()
 
     time.sleep(0.1)
-    
+    keyboard.press(keyEvent.name) 
     keyboard.on_release_key(lockKey, unlock)
     keyboard.on_press_key(unlockKey, unlock)
 def keyboardMouseReleaseRight(keyEvent):
